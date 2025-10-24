@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESTful Contact Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      color: #333;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f1f1f1;
+    }
+    .actions button {
+      margin-right: 5px;
+      background-color: #2ecc71;
+    }
+    .actions button.delete {
+      background-color: #e74c3c;
+    }
+    .actions button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Contact Management API</h1>
+  <div class="container">
+    <form id="contactForm">
+      <input type="hidden" id="contactId" />
+      <input type="text" id="name" placeholder="Name" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="text" id="phone" placeholder="Phone" required />
+      <button type="submit">Save Contact</button>
+    </form>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="contactTable"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = "https://jsonplaceholder.typicode.com/users"; // Mock REST API
+    const form = document.getElementById("contactForm");
+    const tableBody = document.getElementById("contactTable");
+
+    async function fetchContacts() {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      renderContacts(data.slice(0, 5)); // Limit to first 5 for demo
+    }
+
+    function renderContacts(contacts) {
+      tableBody.innerHTML = "";
+      contacts.forEach(contact => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${contact.name}</td>
+          <td>${contact.email}</td>
+          <td>${contact.phone || "N/A"}</td>
+          <td class="actions">
+            <button onclick='editContact(${JSON.stringify(contact)})'>Edit</button>
+            <button class="delete" onclick='deleteContact(${contact.id})'>Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("contactId").value;
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const phone = document.getElementById("phone").value;
+
+      const contact = { name, email, phone };
+
+      if (id) {
+        // Update contact
+        await fetch(`${API_URL}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(contact)
+        });
+        alert("Contact updated!");
+      } else {
+        // Create contact
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(contact)
+        });
+        alert("Contact added!");
+      }
+      form.reset();
+      document.getElementById("contactId").value = "";
+      fetchContacts();
+    });
+
+    async function deleteContact(id) {
+      if (!confirm("Delete this contact?")) return;
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      alert("Contact deleted!");
+      fetchContacts();
+    }
+
+    function editContact(contact) {
+      document.getElementById("contactId").value = contact.id;
+      document.getElementById("name").value = contact.name;
+      document.getElementById("email").value = contact.email;
+      document.getElementById("phone").value = contact.phone || "";
+    }
+
+    fetchContacts();
+  </script>
+</body>
+</html>
